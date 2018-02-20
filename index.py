@@ -1,23 +1,16 @@
-from nltk import word_tokenize
 from nltk.tokenize import RegexpTokenizer
 
-
-def load_data(spams, hams):
-    f = open('test1.txt', 'r', encoding="utf8")
-    for line in f:
-        if line[0] == 's':
-            spams.append(line[4:])
-        else:
-            hams.append(line[3:])
+from classifier import NaiveBayes
+from util import load_data, get_data, divide_data
 
 
-def main():
+def test1():
+    tokenizer = RegexpTokenizer(r'\w+')
     spams = []
     hams = []
-    load_data(spams, hams)
+    load_data(hams, spams, 'test1.txt')
     spam_words = []
     ham_words = []
-    tokenizer = RegexpTokenizer(r'\w+')
 
     for spam in spams:
         spam_words += tokenizer.tokenize(spam)
@@ -25,75 +18,162 @@ def main():
     for ham in hams:
         ham_words += tokenizer.tokenize(ham)
 
-    print(len(spam_words))
+    naive_bayes = NaiveBayes()
 
-    print(len(ham_words))
+    naive_bayes.load(ham_words, spam_words)
 
-    all_text_length = len(spam_words) + len(ham_words)
+    test_spams = []
+    test_hams = []
 
-    spam_probability = len(spam_words) / all_text_length
+    load_data(test_hams, test_spams, 'test1_check.txt')
 
-    ham_probability = len(ham_words) / all_text_length
+    spam_correct = 0
+    spam_incorrect = 0
 
-    spam_map = {}
-
-    spam_count = 0
-
-    ham_map = {}
-
-    ham_count = 0
-
-    vocabulary = set().union(spam_words, ham_words)
-
-    for word in vocabulary:
-
-        if word not in spam_map:
-            count = spam_words.count(word)
-            spam_count += count
-            spam_map[word] = count
-
-        if word not in ham_map:
-            count = ham_words.count(word)
-            ham_count += count
-            ham_map[word] = count
-
-    spam_probabilities = {}
-
-    vocabulary_length = len(vocabulary)
-
-    for key, value in spam_map.items():
-        spam_probabilities[key] = (value + 1) / (vocabulary_length + spam_count)
-
-    ham_probabilities = {}
-
-    for key, value in ham_map.items():
-        ham_probabilities[key] = (value + 1) / (vocabulary_length + ham_count)
-
-    test = "REMINDER FROM O2: To get 2.50 pounds free call credit and details of great offers pls reply 2 this text with your valid name, house no and postcode"
-    test_words = tokenizer.tokenize(test)
-
-    test_spam_probability = spam_probability*100
-    test_ham_probability = ham_probability*100
-
-    for word in test_words:
-        if word in spam_probabilities:
-            test_spam_probability *= spam_probabilities[word]
+    for word in test_spams:
+        result = naive_bayes.is_positive(tokenizer.tokenize(word))
+        if result:
+            spam_incorrect += 1
         else:
-            test_spam_probability *= 1 / (vocabulary_length + spam_count)
+            spam_correct += 1
 
-        if word in ham_probabilities:
-            test_ham_probability *= ham_probabilities[word]
+    print('spam:', 'correct', spam_correct, 'incorrect', spam_incorrect)
+    print('spam:', (spam_correct / (spam_incorrect + spam_correct)) * 100, '%')
+
+    ham_correct = 0
+    ham_incorrect = 0
+
+    for word in test_hams:
+        result = naive_bayes.is_positive(tokenizer.tokenize(word))
+        if result:
+            ham_correct += 1
         else:
-            test_ham_probability *= 1 / (vocabulary_length + ham_count)
+            ham_incorrect += 1
 
-    print(len(spam_map))
-    print(len(ham_map))
-    print(test_spam_probability,test_ham_probability)
+    print('ham:', 'correct', ham_correct, 'incorrect', ham_incorrect)
+    print('ham:', (ham_correct / (ham_incorrect + ham_correct)) * 100, '%')
 
-    if test_spam_probability > test_ham_probability:
-        print("spam")
+
+def test2(is_from_begginning=True, training_percent=70):
+    tokenizer = RegexpTokenizer(r'\w+')
+
+    data = get_data('SMSSpamCollection.txt')
+
+    training_data_length = int((len(data) * training_percent) / 100)
+
+    if is_from_begginning:
+        training_data = data[:training_data_length]
+
+        test_data_length = len(data) - training_data_length
+
+        test_data = data[-test_data_length:]
     else:
-        print("ham")
+        training_data = data[-training_data_length:]
+
+        test_data_length = len(data) - training_data_length
+
+        test_data = data[test_data_length:]
+
+    training_hams = []
+    training_spams = []
+
+    divide_data(training_data, training_hams, training_spams)
+
+    training_spam_words = []
+    training_ham_words = []
+
+    for ham in training_hams:
+        training_ham_words += tokenizer.tokenize(ham)
+
+    for spam in training_spams:
+        training_spam_words += tokenizer.tokenize(spam)
+
+    naive_bayes = NaiveBayes()
+
+    naive_bayes.load(training_ham_words, training_spam_words)
+
+    test_hams = []
+    test_spams = []
+
+    divide_data(test_data, test_hams, test_spams)
+
+    spam_correct = 0
+    spam_incorrect = 0
+
+    for word in test_spams:
+        result = naive_bayes.is_positive(tokenizer.tokenize(word))
+        if result:
+            spam_incorrect += 1
+        else:
+            spam_correct += 1
+
+    print('spam:', 'correct', spam_correct, 'incorrect', spam_incorrect)
+    print('spam:', (spam_correct / (spam_incorrect + spam_correct)) * 100, '%')
+
+    ham_correct = 0
+    ham_incorrect = 0
+
+    for word in test_hams:
+        result = naive_bayes.is_positive(tokenizer.tokenize(word))
+        if result:
+            ham_correct += 1
+        else:
+            ham_incorrect += 1
+
+    print('ham:', 'correct', ham_correct, 'incorrect', ham_incorrect)
+    print('ham:', (ham_correct / (ham_incorrect + ham_correct)) * 100, '%')
 
 
-main()
+print('')
+print("test1 started")
+print('---------------')
+test1()
+
+
+print('')
+print("test2 started")
+print("Training data are 60% from beginning")
+print('---------------')
+test2(True, 60)
+
+print('')
+print("test3 started")
+print("Training data are 60% from end")
+print('---------------')
+test2(False, 60)
+
+print('')
+print("test4 started")
+print("Training data are 70% from beginning")
+print('---------------')
+test2(True, 70)
+
+print('')
+print("test5 started")
+print("Training data are 70% from end")
+print('---------------')
+test2(False, 70)
+
+print('')
+print("test6 started")
+print("Training data are 80% from beginning")
+print('---------------')
+test2(True, 80)
+
+print('')
+print("test7 started")
+print("Training data are 80% from end")
+print('---------------')
+test2(False, 80)
+
+print('')
+print("test8 started")
+print("Training data are 90% from beginning")
+print('---------------')
+test2(True, 90)
+
+print('')
+print("test9 started")
+print("Training data are 90% from end")
+print('---------------')
+test2(False, 90)
