@@ -8,7 +8,7 @@ def test1():
     tokenizer = RegexpTokenizer(r'\w+')
     spams = []
     hams = []
-    load_data(hams, spams, 'test1.txt')
+    load_data(hams, spams, 'res/test1.txt')
     spam_words = []
     ham_words = []
 
@@ -25,7 +25,7 @@ def test1():
     test_spams = []
     test_hams = []
 
-    load_data(test_hams, test_spams, 'test1_check.txt')
+    load_data(test_hams, test_spams, 'res/test1_check.txt')
 
     spam_correct = 0
     spam_incorrect = 0
@@ -57,7 +57,7 @@ def test1():
 def test2(is_from_begginning=True, training_percent=70):
     tokenizer = RegexpTokenizer(r'\w+')
 
-    data = get_data('SMSSpamCollection.txt')
+    data = get_data('res/SMSSpamCollection.txt')
 
     training_data_length = int((len(data) * training_percent) / 100)
 
