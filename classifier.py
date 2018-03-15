@@ -1,9 +1,6 @@
 class NaiveBayes:
-    all_text_length = 0
 
     negative_map = {}
-
-    negative_count = 0
 
     positive_map = {}
 
@@ -22,7 +19,6 @@ class NaiveBayes:
     positive_probabilities = {}
 
     def __init__(self):
-        self.all_text_length = 0
 
         self.negative_map = {}
 
@@ -48,27 +44,24 @@ class NaiveBayes:
 
         print("loading data...")
 
-        self.all_text_length = len(negative_words) + len(positive_words)
+        all_text_length = len(negative_words) + len(positive_words)
 
-        self.negative_probability = len(negative_words) / self.all_text_length
+        self.negative_probability = len(negative_words) / all_text_length
 
-        self.positive_probability = len(positive_words) / self.all_text_length
+        self.positive_probability = len(positive_words) / all_text_length
 
         self.vocabulary = set().union(negative_words, positive_words)
 
         print("mapping data...")
 
         for word in self.vocabulary:
+            count = negative_words.count(word)
+            self.negative_count += count
+            self.negative_map[word] = count
 
-            if word not in self.negative_map:
-                count = negative_words.count(word)
-                self.negative_count += count
-                self.negative_map[word] = count
-
-            if word not in self.positive_map:
-                count = positive_words.count(word)
-                self.positive_count += count
-                self.positive_map[word] = count
+            count = positive_words.count(word)
+            self.positive_count += count
+            self.positive_map[word] = count
 
         self.vocabulary_length = len(self.vocabulary)
 
